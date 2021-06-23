@@ -33,15 +33,11 @@ namespace Bank.Api
 
             services.AddAutoMapper(typeof(Startup));
 
-            services.AddIdentityServices(Configuration);
-
-            services.AddDependencyInjectionConfiguration();
+            services.AddDependencyInjectionConfiguration(Configuration);
 
             services.AddControllers();
 
             services.AddSwaggerConfiguration();
-
-            services.AddQueueConfig(Configuration);
 
             services.AddCors();
         }

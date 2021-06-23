@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using System.Text;
 
-namespace Bank.App.MessageQueues
+namespace Bank.Infra.Consumers.MessageQueues
 {
     public class TransactionSendQueue : ITransactionSendQueue
     {

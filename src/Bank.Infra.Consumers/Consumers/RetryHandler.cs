@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Bank.Api.Consumers
+namespace Bank.Infra.Consumers.Consumers
 {
     public class RetryHandler
     {

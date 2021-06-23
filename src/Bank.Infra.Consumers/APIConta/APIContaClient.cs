@@ -3,7 +3,7 @@ using Bank.Domain.Models.MQ;
 using Newtonsoft.Json;
 using RestSharp;
 
-namespace Bank.App.APIConta
+namespace Bank.Infra.Consumers.APIConta
 {
     public class APIContaClient
     {

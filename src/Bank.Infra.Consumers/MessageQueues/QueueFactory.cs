@@ -2,7 +2,7 @@
 using RabbitMQ.Client;
 using System.Collections.Generic;
 
-namespace Bank.App.MessageQueues
+namespace Bank.Infra.Consumers.MessageQueues
 {
     public class QueueFactory
     {

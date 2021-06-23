@@ -1,8 +1,8 @@
 ﻿using Bank.App;
-using Bank.App.MessageQueues;
 using Bank.Domain.Entities;
 using Bank.Domain.Models.MQ;
 using Bank.Domain.Notifications;
+using Bank.Infra.Consumers.MessageQueues;
 using Bank.Infra.Data.Contexts;
 using Bank.Infra.Data.Repositories;
 using Microsoft.EntityFrameworkCore;

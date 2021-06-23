@@ -1,7 +1,7 @@
-﻿using Bank.App.APIConta;
-using Bank.App.MessageQueues;
-using Bank.Domain.Models.APIConta;
+﻿using Bank.Domain.Models.APIConta;
 using Bank.Domain.Models.MQ;
+using Bank.Infra.Consumers.APIConta;
+using Bank.Infra.Consumers.MessageQueues;
 using Bank.Infra.Data.Contexts;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -16,7 +16,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using static Bank.Domain.Enums.TransactionStatusEnum;
 
-namespace Bank.Api.Consumers
+namespace Bank.Infra.Consumers.Consumers
 {
     public class TransferConsumer : BackgroundService
     {
