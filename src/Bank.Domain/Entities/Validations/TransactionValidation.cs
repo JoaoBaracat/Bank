@@ -12,6 +12,8 @@ namespace Bank.Domain.Entities.Validations
             RuleFor(x => x.AccountDestination)
                 .NotEmpty().WithMessage("The {PropertyName} must be supplied");
 
+            RuleFor(x => x).Must(x => x.AccountDestination != x.AccountOrigin).WithMessage("The accounts must be different");
+
             RuleFor(x => x.Value)
                 .NotEmpty().WithMessage("The {PropertyName} must be supplied")
                 .GreaterThan(0).WithMessage("The {PropertyName} must be greater than 0");

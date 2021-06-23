@@ -1,13 +1,15 @@
 using Bank.Api.Configurations;
+using Bank.Domain.Models.MQ;
 using Bank.Infra.Data.Contexts;
 using Bank.Infra.Identity;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Serilog;
 
 namespace Bank.Api
 {
@@ -23,6 +25,7 @@ namespace Bank.Api
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.Configure<MQSettings>(Configuration.GetSection("MQSettings"));
             services.AddDbContext<BankDbContext>(options =>
             {
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
@@ -38,11 +41,13 @@ namespace Bank.Api
 
             services.AddSwaggerConfiguration();
 
+            services.AddQueueConfig(Configuration);
+
             services.AddCors();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
         {
             if (env.IsDevelopment())
             {
@@ -64,6 +69,14 @@ namespace Bank.Api
             });
 
             app.UseAuthorization();
+
+            //Serilog
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
+                .CreateLogger();
+
+            loggerFactory.AddSerilog();
 
             app.UseEndpoints(endpoints =>
             {

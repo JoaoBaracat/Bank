@@ -11,17 +11,21 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Domain", "Domain", "{6753E7
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infra", "Infra", "{2BF01223-D20F-4513-BB48-2C715AC01868}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bank.Api", "src\Bank.Api\Bank.Api.csproj", "{B3D12F99-AE0A-4AD1-B71C-47AD8D2B5166}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bank.Api", "src\Bank.Api\Bank.Api.csproj", "{B3D12F99-AE0A-4AD1-B71C-47AD8D2B5166}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bank.App", "src\Bank.App\Bank.App.csproj", "{FA2B685A-540A-4FBF-809C-FEA6D8CD64C2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bank.App", "src\Bank.App\Bank.App.csproj", "{FA2B685A-540A-4FBF-809C-FEA6D8CD64C2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bank.Domain", "src\Bank.Domain\Bank.Domain.csproj", "{D3860041-89F2-4C01-9299-1ABF2781C37A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bank.Domain", "src\Bank.Domain\Bank.Domain.csproj", "{D3860041-89F2-4C01-9299-1ABF2781C37A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bank.Infra.Data", "src\Bank.Infra.Data\Bank.Infra.Data.csproj", "{6C0CCB80-296D-413E-A104-A722A1D57C9B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bank.Infra.Data", "src\Bank.Infra.Data\Bank.Infra.Data.csproj", "{6C0CCB80-296D-413E-A104-A722A1D57C9B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bank.Infra.Identity", "src\Bank.Infra.Identity\Bank.Infra.Identity.csproj", "{84F9921D-CACC-4309-87CD-C81A86FD56E9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bank.Infra.Identity", "src\Bank.Infra.Identity\Bank.Infra.Identity.csproj", "{84F9921D-CACC-4309-87CD-C81A86FD56E9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bank.Infra.IoC", "src\Bank.Infra.IoC\Bank.Infra.IoC.csproj", "{037EF973-6B1C-45E0-81E1-AC65F4783225}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bank.Infra.IoC", "src\Bank.Infra.IoC\Bank.Infra.IoC.csproj", "{037EF973-6B1C-45E0-81E1-AC65F4783225}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{5204A66C-3665-421A-88C7-700473980E06}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bank.Test", "test\Bank.Test\Bank.Test.csproj", "{900AB700-17DA-4A3B-8FF2-8DD332739B1D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -53,6 +57,10 @@ Global
 		{037EF973-6B1C-45E0-81E1-AC65F4783225}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{037EF973-6B1C-45E0-81E1-AC65F4783225}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{037EF973-6B1C-45E0-81E1-AC65F4783225}.Release|Any CPU.Build.0 = Release|Any CPU
+		{900AB700-17DA-4A3B-8FF2-8DD332739B1D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{900AB700-17DA-4A3B-8FF2-8DD332739B1D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{900AB700-17DA-4A3B-8FF2-8DD332739B1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{900AB700-17DA-4A3B-8FF2-8DD332739B1D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -64,6 +72,7 @@ Global
 		{6C0CCB80-296D-413E-A104-A722A1D57C9B} = {2BF01223-D20F-4513-BB48-2C715AC01868}
 		{84F9921D-CACC-4309-87CD-C81A86FD56E9} = {2BF01223-D20F-4513-BB48-2C715AC01868}
 		{037EF973-6B1C-45E0-81E1-AC65F4783225} = {2BF01223-D20F-4513-BB48-2C715AC01868}
+		{900AB700-17DA-4A3B-8FF2-8DD332739B1D} = {5204A66C-3665-421A-88C7-700473980E06}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {844D9B35-8A32-45C8-ABAC-C5E8AD2E1C14}

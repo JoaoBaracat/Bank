@@ -5,33 +5,34 @@ using Bank.Domain.Apps;
 using Bank.Domain.Entities;
 using Bank.Domain.Enums;
 using Bank.Domain.Notifications;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Bank.Api.Controllers
 {
     [Route("api/fund-transfer")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class TransactionController : MainController
     {
         private readonly IMapper _mapper;
         private readonly ITransactionApp _transactionApp;
+        private readonly ILogger<TransactionController> _logger;
 
-        public TransactionController(ITransactionApp transactionApp, IMapper mapper, INotifier notifier) : base(notifier)
+        public TransactionController(ITransactionApp transactionApp, IMapper mapper, INotifier notifier, ILogger<TransactionController> logger) : base(notifier, logger)
         {
             _mapper = mapper;
             _transactionApp = transactionApp;
+            _logger = logger;
         }
 
         [HttpGet("{id:Guid}")]
         public async Task<ActionResult> GetTransactionStatusById(Guid id)
         {
+            _logger.LogInformation($"Request for new transaction status with id: {id}");
             var transaction = await _transactionApp.GetById(id);
             if (transaction == null)
             {
@@ -51,8 +52,9 @@ namespace Bank.Api.Controllers
         [HttpPost]
         public async Task<ActionResult<ResponseTransactionQuery>> CreateTransaction(CreateTransactionCommand createTransactionCommand)
         {
+            _logger.LogInformation($"Request for new transaction with transaction: {JsonConvert.SerializeObject(createTransactionCommand)}");
             if (!IsModelValid())
-            {
+            {                
                 return CustomResponse(createTransactionCommand);
             }
 

@@ -1,8 +1,4 @@
 ﻿using AutoMapper;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Bank.Domain.Entities;
 using Bank.Api.Models.Transaction.Commands;
 using Bank.Api.Models.Transaction.Queries;

@@ -1,11 +1,11 @@
 ﻿using Bank.Domain.Apps;
+using Bank.Domain.Apps.MessageQueues;
 using Bank.Domain.Entities;
 using Bank.Domain.Entities.Validations;
 using Bank.Domain.Notifications;
 using Bank.Domain.Repositories;
+using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Bank.App
@@ -13,10 +13,12 @@ namespace Bank.App
     public class TransactionApp : AppBase, ITransactionApp
     {
         private readonly ITransactionRepository _transactionRepository;
+        private readonly ITransactionSendQueue _transactionSendQueue;
 
-        public TransactionApp(ITransactionRepository transactionRepository, IUnitOfWork unitOfWork, INotifier notifier) : base(unitOfWork, notifier)
+        public TransactionApp(ITransactionRepository transactionRepository, IUnitOfWork unitOfWork, INotifier notifier, ITransactionSendQueue transactionSendQueue) : base(unitOfWork, notifier)
         {
             _transactionRepository = transactionRepository;
+            _transactionSendQueue = transactionSendQueue;
         }
 
         public async Task<Transaction> GetById(Guid id)
@@ -30,18 +32,16 @@ namespace Bank.App
 
             return transaction;
         }
-
+        
         public async Task<Transaction> Create(Transaction transaction)
         {
             if (!Validate(new TransactionValidation(), transaction))
             {
                 return null;
             }
-
             _transactionRepository.Create(transaction);
-
             await UnitOfWork.Save();
-
+            _transactionSendQueue.SendQueue(JsonConvert.SerializeObject(transaction));
             return transaction;
         }
 

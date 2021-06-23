@@ -1,9 +1,6 @@
 ﻿using Bank.Domain.Identity;
 using Bank.Domain.Models.Authentication;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Bank.Api.Controllers

@@ -4,9 +4,6 @@ using Bank.Domain.Notifications;
 using Bank.Domain.Repositories;
 using Bank.Infra.Data.Repositories;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Bank.Infra.IoC
 {
