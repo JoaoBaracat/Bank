@@ -5,6 +5,7 @@ using Bank.Domain.Apps;
 using Bank.Domain.Entities;
 using Bank.Domain.Enums;
 using Bank.Domain.Notifications;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -15,7 +16,7 @@ namespace Bank.Api.Controllers
 {
     [Route("api/fund-transfer")]
     [ApiController]
-    //[Authorize]
+    [Authorize]
     public class TransactionController : MainController
     {
         private readonly IMapper _mapper;

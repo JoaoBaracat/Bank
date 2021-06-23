@@ -12,6 +12,7 @@ using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -51,7 +52,24 @@ namespace Bank.Api.Consumers
                 
                 if (accountOrigin == null || accountDestination == null)
                 {
-                    _model.BasicReject(eventArgs.DeliveryTag, true);
+                    var retryHandler = new RetryHandler();
+                    var attempts = retryHandler.GetRetryAttempts(eventArgs.BasicProperties);
+                    if (attempts < 3)
+                    {
+                        attempts++;
+                        var properties = _model.CreateBasicProperties();
+                        properties.Headers = retryHandler.CopyMessageHeaders(eventArgs.BasicProperties.Headers);
+                        retryHandler.SetRetryAttempts(properties, attempts);
+                        _model.BasicPublish(eventArgs.Exchange, eventArgs.RoutingKey, properties, eventArgs.Body);
+                        _model.BasicAck(eventArgs.DeliveryTag, false);
+                    }
+                    else
+                    {
+                        message.Status = (int)TransactionStatus.Error;
+                        message.Message = "APIConta not reachable.";
+                        UpdateTransaction(message);
+                        _model.BasicAck(eventArgs.DeliveryTag, false);
+                    }
                 }
                 else if (accountOrigin.Id == 0 || accountDestination.Id == 0)
                 {
@@ -83,9 +101,12 @@ namespace Bank.Api.Consumers
                         Value = message.Value,
                         Type = Enumerations.GetEnumDescription(TransactionType.Credit)
                     };
+                    
+                    var transfers = new List<BalanceAdjustment>();
+                    transfers.Add(transferOrigin);
+                    transfers.Add(transferDestination);
                     _transfer = new TansferSendQueue(_configuration);
-                    _transfer.SendQueue(JsonConvert.SerializeObject(transferOrigin));
-                    _transfer.SendQueue(JsonConvert.SerializeObject(transferDestination));
+                    _transfer.SendQueue(JsonConvert.SerializeObject(transfers));
 
                     message.Status = (int)TransactionStatus.Processing;
                     UpdateTransaction(message);
@@ -98,7 +119,7 @@ namespace Bank.Api.Consumers
             return Task.CompletedTask;
         }
 
-        public void UpdateTransaction(Transaction transaction)
+        private void UpdateTransaction(Transaction transaction)
         {
             using (var scope = _serviceProvider.CreateScope())
             {
@@ -110,6 +131,5 @@ namespace Bank.Api.Consumers
                 context.SaveChanges();
             }
         }
-
     }
 }
