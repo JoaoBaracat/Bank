@@ -44,76 +44,59 @@ namespace Bank.Infra.Consumers.Consumers
             var consumer = new EventingBasicConsumer(_model);
 
             consumer.Received += async (sender, eventArgs) =>
-            {                
+            {
+                var transactionMessage = new Transaction();
                 try
                 {
                     var contentArray = eventArgs.Body.ToArray();
                     var contentString = Encoding.UTF8.GetString(contentArray);
-                    var message = JsonConvert.DeserializeObject<Transaction>(contentString);
-                    message.Status = (int)TransactionStatus.Processing;
-                    await UpdateTransaction(message);
+                    transactionMessage = JsonConvert.DeserializeObject<Transaction>(contentString);
+                    transactionMessage.Status = (int)TransactionStatus.Processing;
+                    await UpdateTransactionAsync(transactionMessage);
                     _logger.LogInformation($"Processing message: {contentString}");
 
-                    var accountOrigin = await _apiConta.GetAccountByNumber(message.AccountOrigin);
-                    var accountDestination = await _apiConta.GetAccountByNumber(message.AccountDestination);
+                    var accountOrigin = await _apiConta.GetAccountByNumberAsync(transactionMessage.AccountOrigin);
+                    var accountDestination = await _apiConta.GetAccountByNumberAsync(transactionMessage.AccountDestination);
                     if (accountOrigin == null || accountDestination == null)
                     {
-                        var retryHandler = new RetryHandler();
-                        var attempts = retryHandler.GetRetryAttempts(eventArgs.BasicProperties);
-                        if (attempts < _configuration.RetryAttempts)
-                        {
-                            attempts++;
-                            var properties = _model.CreateBasicProperties();
-                            properties.Headers = retryHandler.CopyMessageHeaders(eventArgs.BasicProperties.Headers);
-                            retryHandler.SetRetryAttempts(properties, attempts);
-                            _model.BasicPublish(eventArgs.Exchange, eventArgs.RoutingKey, properties, eventArgs.Body);
-                            _model.BasicAck(eventArgs.DeliveryTag, false);
-                        }
-                        else
-                        {
-                            message.Status = (int)TransactionStatus.Error;
-                            message.Message = "APIConta not reachable.";
-                            await UpdateTransaction(message);
-                            _model.BasicAck(eventArgs.DeliveryTag, false);
-                            _logger.LogInformation($"{message.Message}: {contentString}");
-                        }
+                        await RetryQueue(eventArgs, transactionMessage, contentString);
                     }
                     else if (accountOrigin.Id == 0 || accountDestination.Id == 0)
                     {
-                        message.Status = (int)TransactionStatus.Error;
-                        message.Message = "Account not found.";
-                        await UpdateTransaction(message);
+                        transactionMessage.Status = (int)TransactionStatus.Error;
+                        transactionMessage.Message = "Account not found.";
+                        await UpdateTransactionAsync(transactionMessage);
                         _model.BasicAck(eventArgs.DeliveryTag, false);
-                        _logger.LogInformation($"{message.Message}: {contentString}");
+                        _logger.LogInformation($"{transactionMessage.Message}: {contentString}");
                     }
                     else
                     {
                         var transferOrigin = new BalanceAdjustment()
                         {
-                            TransactionId = message.Id,
-                            AccountNumber = message.AccountOrigin,
-                            Value = message.Value,
+                            TransactionId = transactionMessage.Id,
+                            AccountNumber = transactionMessage.AccountOrigin,
+                            Value = transactionMessage.Value,
                             Type = Enumerations.GetEnumDescription(TransactionType.Debit)
                         };
                         var transferDestination = new BalanceAdjustment()
                         {
-                            TransactionId = message.Id,
-                            AccountNumber = message.AccountDestination,
-                            Value = message.Value,
+                            TransactionId = transactionMessage.Id,
+                            AccountNumber = transactionMessage.AccountDestination,
+                            Value = transactionMessage.Value,
                             Type = Enumerations.GetEnumDescription(TransactionType.Credit)
                         };
 
-                        var originResponse = await _apiConta.PostTransfer(transferOrigin);
+                        var originResponse = await _apiConta.PostTransferAsync(transferOrigin);
                         if (originResponse.Response == "Success")
                         {
                             var processed = false;
                             while (!processed)
                             {
-                                var destinationResponse = await _apiConta.PostTransfer(transferDestination);
+                                var destinationResponse = await _apiConta.PostTransferAsync(transferDestination);
                                 if (destinationResponse.Response == "Success")
                                 {
-                                    message.Status = (int)TransactionStatus.Confirmed;
-                                    await UpdateTransaction(message);
+                                    transactionMessage.Status = (int)TransactionStatus.Confirmed;
+                                    await UpdateTransactionAsync(transactionMessage);
                                     processed = true;
                                     _model.BasicAck(eventArgs.DeliveryTag, false);
                                     _logger.LogInformation($"Message processed: {contentString}");
@@ -122,38 +105,26 @@ namespace Bank.Infra.Consumers.Consumers
                         }
                         else if (originResponse.Response == "Not enough balance")
                         {
-                            message.Status = (int)TransactionStatus.Error;
-                            message.Message = originResponse.Response;
-                            await UpdateTransaction(message);
+                            transactionMessage.Status = (int)TransactionStatus.Error;
+                            transactionMessage.Message = originResponse.Response;
+                            await UpdateTransactionAsync(transactionMessage);
                             _model.BasicAck(eventArgs.DeliveryTag, false);
-                            _logger.LogInformation($"{message.Message}: {contentString}");
+                            _logger.LogInformation($"{transactionMessage.Message}: {contentString}");
                         }
                         else
-                        {
-                            var retryHandler = new RetryHandler();
-                            var attempts = retryHandler.GetRetryAttempts(eventArgs.BasicProperties);
-                            if (attempts < _configuration.RetryAttempts)
-                            {
-                                attempts++;
-                                var properties = _model.CreateBasicProperties();
-                                properties.Headers = retryHandler.CopyMessageHeaders(eventArgs.BasicProperties.Headers);
-                                retryHandler.SetRetryAttempts(properties, attempts);
-                                _model.BasicPublish(eventArgs.Exchange, eventArgs.RoutingKey, properties, eventArgs.Body);
-                                _model.BasicAck(eventArgs.DeliveryTag, false);
-                            }
-                            else
-                            {
-                                message.Status = (int)TransactionStatus.Error;
-                                message.Message = "APIConta not reachable.";
-                                await UpdateTransaction(message);
-                                _model.BasicAck(eventArgs.DeliveryTag, false);
-                                _logger.LogInformation($"{message.Message}: {contentString}");
-                            }
+                        {                            
+                            await RetryQueue(eventArgs, transactionMessage, contentString);
                         }
                     }
                 }
                 catch(Exception e)
                 {
+                    if (transactionMessage != null && transactionMessage.Id != Guid.Empty)
+                    {
+                        transactionMessage.Status = (int)TransactionStatus.Error;
+                        transactionMessage.Message = e.Message;
+                        await UpdateTransactionAsync(transactionMessage);
+                    }                    
                     _logger.LogError($"Error in transaction consumer with exception: {e.Message}");
                     _model.BasicReject(eventArgs.DeliveryTag, false);
                 }
@@ -161,16 +132,42 @@ namespace Bank.Infra.Consumers.Consumers
             _model.BasicConsume(_configuration.TransactionQueue, false, consumer);
         }
 
-        private async Task UpdateTransaction(Transaction transaction)
+        private async Task RetryQueue(BasicDeliverEventArgs eventArgs, Transaction transaction, string contentString)
+        {
+            var retryHandler = new RetryHandler();
+            var attempts = retryHandler.GetRetryAttempts(eventArgs.BasicProperties);
+            if (attempts < _configuration.RetryAttempts)
+            {
+                attempts++;
+                var properties = _model.CreateBasicProperties();
+                properties.Headers = retryHandler.CopyMessageHeaders(eventArgs.BasicProperties.Headers);
+                retryHandler.SetRetryAttempts(properties, attempts);
+                _model.BasicPublish(eventArgs.Exchange, eventArgs.RoutingKey, properties, eventArgs.Body);
+                _model.BasicAck(eventArgs.DeliveryTag, false);
+            }
+            else
+            {
+                transaction.Status = (int)TransactionStatus.Error;
+                transaction.Message = "APIConta not reachable.";
+                await UpdateTransactionAsync(transaction);
+                _model.BasicAck(eventArgs.DeliveryTag, false);
+                _logger.LogInformation($"{transaction.Message}: {contentString}");
+            }
+        }
+
+        private async Task UpdateTransactionAsync(Transaction transaction)
         {
             using (var scope = _serviceProvider.CreateScope())
             {
                 var context = scope.ServiceProvider.GetRequiredService<BankDbContext>();
                 var transactionToUpdate = await context.Transactions.FindAsync(transaction.Id);
-                transactionToUpdate.Status = transaction.Status;
-                transactionToUpdate.Message = transaction.Message;
-                context.Update(transactionToUpdate);
-                await context.SaveChangesAsync();
+                if (transactionToUpdate != null)
+                {
+                    transactionToUpdate.Status = transaction.Status;
+                    transactionToUpdate.Message = transaction.Message;
+                    context.Update(transactionToUpdate);
+                    await context.SaveChangesAsync();
+                }                
             }
         }
     }

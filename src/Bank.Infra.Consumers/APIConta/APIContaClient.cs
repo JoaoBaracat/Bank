@@ -19,7 +19,7 @@ namespace Bank.Infra.Consumers.APIConta
             _postEndPoint = settings.APIContaSettings.PostEndPoint;
         }
 
-        public async Task<Account> GetAccountByNumber(string accountNumber)
+        public async Task<Account> GetAccountByNumberAsync(string accountNumber)
         {
             var client = new RestClient(_url + _getEndPoint + accountNumber);
             var request = new RestRequest(Method.GET);
@@ -40,7 +40,7 @@ namespace Bank.Infra.Consumers.APIConta
             return null;
         }
 
-        public async Task<BalanceAdjustmentResponse> PostTransfer(BalanceAdjustment balanceAdjustment)
+        public async Task<BalanceAdjustmentResponse> PostTransferAsync(BalanceAdjustment balanceAdjustment)
         {
             var client = new RestClient(_url + _postEndPoint);
             var request = new RestRequest(Method.POST);
