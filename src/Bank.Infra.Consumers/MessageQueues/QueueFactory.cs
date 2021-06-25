@@ -14,7 +14,6 @@ namespace Bank.Infra.Consumers.MessageQueues
         public QueueFactory(MQSettings settings)
         {
             _configuration = settings;
-            //Setup connection
             _connectionFactory = new ConnectionFactory
             {
                 HostName = _configuration.MQHostName,
@@ -36,17 +35,7 @@ namespace Bank.Infra.Consumers.MessageQueues
             _model.QueueBind(_configuration.TransactionQueue, _configuration.Exchange, _configuration.TransactionQueue);
             return _model;
         }
-        public IModel CreateTransferQueue()
-        {
-            CreateDeadLetterQueue();
-            _model.QueueDeclare(_configuration.TranferQueue, true, false, false, new Dictionary<string, object> { { "x-dead-letter-exchange", _configuration.DeadLetterExchange } });
-            _model.ExchangeDeclare(_configuration.Exchange,
-                ExchangeType.Direct,
-                true,
-                arguments: new Dictionary<string, object> { { "x-dead-letter-exchange", _configuration.DeadLetterExchange } });
-            _model.QueueBind(_configuration.TranferQueue, _configuration.Exchange, _configuration.TranferQueue);
-            return _model;
-        }
+
         private IModel CreateDeadLetterQueue()
         {
             _model.QueueDeclare(_configuration.DeadLetterQueue, true, false, false, null);

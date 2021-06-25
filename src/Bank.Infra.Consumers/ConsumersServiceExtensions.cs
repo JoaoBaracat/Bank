@@ -11,9 +11,8 @@ namespace Bank.Infra.Consumers
     {
         public static void AddQueueConfig(this IServiceCollection services, IConfiguration configuration)
         {
-            //consumers
+            //consumer
             services.AddHostedService<TransactionConsumer>();
-            services.AddHostedService<TransferConsumer>();
 
             //sender
             services.Configure<MQSettings>(configuration);

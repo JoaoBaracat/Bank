@@ -2,6 +2,7 @@
 using Bank.Domain.Models.MQ;
 using Newtonsoft.Json;
 using RestSharp;
+using System.Threading.Tasks;
 
 namespace Bank.Infra.Consumers.APIConta
 {
@@ -18,12 +19,12 @@ namespace Bank.Infra.Consumers.APIConta
             _postEndPoint = settings.APIContaSettings.PostEndPoint;
         }
 
-        public Account GetAccountByNumber(string accountNumber)
+        public async Task<Account> GetAccountByNumber(string accountNumber)
         {
             var client = new RestClient(_url + _getEndPoint + accountNumber);
             var request = new RestRequest(Method.GET);
             request.AddHeader("Content-Type", "application/json");
-            IRestResponse response = client.Execute(request);
+            IRestResponse response = await client.ExecuteAsync(request);
             if (response.StatusCode == System.Net.HttpStatusCode.OK)
             {
                 return JsonConvert.DeserializeObject<Account>(response.Content);
@@ -39,7 +40,7 @@ namespace Bank.Infra.Consumers.APIConta
             return null;
         }
 
-        public bool PostTransfer(BalanceAdjustment balanceAdjustment)
+        public async Task<BalanceAdjustmentResponse> PostTransfer(BalanceAdjustment balanceAdjustment)
         {
             var client = new RestClient(_url + _postEndPoint);
             var request = new RestRequest(Method.POST);
@@ -51,12 +52,19 @@ namespace Bank.Infra.Consumers.APIConta
                 Type = balanceAdjustment.Type
 
             });
-            IRestResponse response = client.Execute(request);
+            IRestResponse response = await client.ExecuteAsync(request);
             if (response.StatusCode == System.Net.HttpStatusCode.OK)
             {
-                return true;
+                return new BalanceAdjustmentResponse() { Response = "Success" };
             }            
-            return false;
+            else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+                return new BalanceAdjustmentResponse() { Response = JsonConvert.DeserializeObject<string>(response.Content) };
+            }
+            else
+            {
+                return new BalanceAdjustmentResponse() { Response = "Error" };
+            }
         }
     }
 }

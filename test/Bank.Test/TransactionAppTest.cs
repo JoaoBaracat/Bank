@@ -35,10 +35,10 @@ namespace Bank.Test
                 MQUserName = "guest",
                 MQPassword = "guest",
                 TransactionQueue = "BankTransactionQueueTest",
-                TranferQueue = "BankTransferQueueTest",
                 Exchange = "BankExchangeTest",
                 DeadLetterQueue = "BankDeadLetterQueueTest",
                 DeadLetterExchange = "BankDeadLetterExchangeTest",
+                RetryAttempts = 3,
                 APIContaSettings = new APIContaSettings() 
                 {
                     Url = "http://localhost:5000",
