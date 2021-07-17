@@ -1,22 +1,27 @@
-﻿using Bank.Domain.Models.APIConta;
+﻿using Bank.Domain.Apps.MessageQueues;
+using Bank.Domain.Apps.Services;
+using Bank.Domain.Models.APIConta;
 using Bank.Domain.Models.MQ;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using RestSharp;
 using System.Threading.Tasks;
 
 namespace Bank.Infra.Consumers.APIConta
 {
-    public class APIContaClient
+    public class APIContaClient : IAPIContaClient
     {
         private string _url;
         private string _getEndPoint;
         private string _postEndPoint;
+        private readonly MQSettings _configuration;
 
-        public APIContaClient(MQSettings settings)
+        public APIContaClient(IOptions<MQSettings> option)
         {
-            _url = settings.APIContaSettings.Url;
-            _getEndPoint = settings.APIContaSettings.GetEndPoint;
-            _postEndPoint = settings.APIContaSettings.PostEndPoint;
+            _configuration = option.Value;
+            _url = _configuration.APIContaSettings.Url;
+            _getEndPoint = _configuration.APIContaSettings.GetEndPoint;
+            _postEndPoint = _configuration.APIContaSettings.PostEndPoint;
         }
 
         public async Task<Account> GetAccountByNumberAsync(string accountNumber)

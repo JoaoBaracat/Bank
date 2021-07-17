@@ -13,12 +13,15 @@ namespace Bank.Infra.Consumers.MessageQueues
 
         public TransactionSendQueue(IOptions<MQSettings> option)
         {
-            _configuration = option.Value;            
+            _configuration = option.Value;       
+            if (_model == null)
+            {
+                _model = new QueueFactory(_configuration).CreateTransactionQueue();
+            }
         }
 
         public void SendQueue(string message)
         {
-            _model = new QueueFactory(_configuration).CreateTransactionQueue();
             //Setup properties
             var properties = _model.CreateBasicProperties();
             //Serialize

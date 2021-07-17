@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  bank.api:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    ports:
+      - "33095:80"

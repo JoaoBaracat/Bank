@@ -31,7 +31,7 @@ namespace Bank.Api.Controllers
                     _logger.LogWarning($"Invalid operation with object: {JsonConvert.SerializeObject(result)}");
                 }
                 _logger.LogWarning($"Invalid operation with errors: {JsonConvert.SerializeObject(errors)}");
-                return BadRequest(new { success = false, errors = errors, data = result });
+                return NotFound(new { success = false, errors = errors, data = result });
             }
 
             _logger.LogInformation($"Successful operation: {JsonConvert.SerializeObject(result)}");

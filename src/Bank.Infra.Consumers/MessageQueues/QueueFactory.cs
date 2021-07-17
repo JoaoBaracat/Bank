@@ -20,6 +20,10 @@ namespace Bank.Infra.Consumers.MessageQueues
                 UserName = _configuration.MQUserName,
                 Password = _configuration.MQPassword
             };
+            if (_connectionFactory.HostName == "Bank.RabbitMQ")
+            {
+                System.Threading.Thread.Sleep(5000);
+            }
             _connection = _connectionFactory.CreateConnection();
             _model = _connection.CreateModel();
         }

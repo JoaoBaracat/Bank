@@ -1,4 +1,7 @@
-﻿using Bank.Domain.Entities;
+﻿using Bank.Domain.Apps;
+using Bank.Domain.Apps.MessageQueues;
+using Bank.Domain.Apps.Services;
+using Bank.Domain.Entities;
 using Bank.Domain.Enums;
 using Bank.Domain.Models.APIConta;
 using Bank.Domain.Models.MQ;
@@ -27,19 +30,28 @@ namespace Bank.Infra.Consumers.Consumers
         private readonly MQSettings _configuration;
         private readonly IServiceProvider _serviceProvider;
         private readonly IModel _model;
-        private APIContaClient _apiConta;
         private readonly ILogger<TransactionConsumer> _logger;
+        private readonly IAPIContaClient _apiContaClient;
 
-        public TransactionConsumer(IOptions<MQSettings> option, IServiceProvider serviceProvider, ILogger<TransactionConsumer> logger)
+        public TransactionConsumer(IOptions<MQSettings> option, 
+            IServiceProvider serviceProvider, 
+            ILogger<TransactionConsumer> logger, 
+            IAPIContaClient apiContaClient)
         {
             _configuration = option.Value;
             _serviceProvider = serviceProvider;
             _model = new QueueFactory(_configuration).CreateTransactionQueue();
-            _apiConta = new APIContaClient(_configuration);
             _logger = logger;
+            _apiContaClient = apiContaClient;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            var consumer = GetConsumer(_model);
+            _model.BasicConsume(_configuration.TransactionQueue, false, consumer);
+        }
+
+        private EventingBasicConsumer GetConsumer(IModel model)
         {
             var consumer = new EventingBasicConsumer(_model);
 
@@ -55,8 +67,8 @@ namespace Bank.Infra.Consumers.Consumers
                     await UpdateTransactionAsync(transactionMessage);
                     _logger.LogInformation($"Processing message: {contentString}");
 
-                    var accountOrigin = await _apiConta.GetAccountByNumberAsync(transactionMessage.AccountOrigin);
-                    var accountDestination = await _apiConta.GetAccountByNumberAsync(transactionMessage.AccountDestination);
+                    var accountOrigin = await _apiContaClient.GetAccountByNumberAsync(transactionMessage.AccountOrigin);
+                    var accountDestination = await _apiContaClient.GetAccountByNumberAsync(transactionMessage.AccountDestination);
                     if (accountOrigin == null || accountDestination == null)
                     {
                         await RetryQueue(eventArgs, transactionMessage, contentString);
@@ -86,13 +98,13 @@ namespace Bank.Infra.Consumers.Consumers
                             Type = Enumerations.GetEnumDescription(TransactionType.Credit)
                         };
 
-                        var originResponse = await _apiConta.PostTransferAsync(transferOrigin);
+                        var originResponse = await _apiContaClient.PostTransferAsync(transferOrigin);
                         if (originResponse.Response == "Success")
                         {
                             var processed = false;
                             while (!processed)
                             {
-                                var destinationResponse = await _apiConta.PostTransferAsync(transferDestination);
+                                var destinationResponse = await _apiContaClient.PostTransferAsync(transferDestination);
                                 if (destinationResponse.Response == "Success")
                                 {
                                     transactionMessage.Status = (int)TransactionStatus.Confirmed;
@@ -112,24 +124,24 @@ namespace Bank.Infra.Consumers.Consumers
                             _logger.LogInformation($"{transactionMessage.Message}: {contentString}");
                         }
                         else
-                        {                            
+                        {
                             await RetryQueue(eventArgs, transactionMessage, contentString);
                         }
                     }
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     if (transactionMessage != null && transactionMessage.Id != Guid.Empty)
                     {
                         transactionMessage.Status = (int)TransactionStatus.Error;
                         transactionMessage.Message = e.Message;
                         await UpdateTransactionAsync(transactionMessage);
-                    }                    
+                    }
                     _logger.LogError($"Error in transaction consumer with exception: {e.Message}");
                     _model.BasicReject(eventArgs.DeliveryTag, false);
                 }
             };
-            _model.BasicConsume(_configuration.TransactionQueue, false, consumer);
+            return consumer;
         }
 
         private async Task RetryQueue(BasicDeliverEventArgs eventArgs, Transaction transaction, string contentString)
@@ -159,15 +171,14 @@ namespace Bank.Infra.Consumers.Consumers
         {
             using (var scope = _serviceProvider.CreateScope())
             {
-                var context = scope.ServiceProvider.GetRequiredService<BankDbContext>();
-                var transactionToUpdate = await context.Transactions.FindAsync(transaction.Id);
+                var transactionApp = scope.ServiceProvider.GetRequiredService<ITransactionApp>();
+                var transactionToUpdate = await transactionApp.GetById(transaction.Id);
                 if (transactionToUpdate != null)
                 {
                     transactionToUpdate.Status = transaction.Status;
                     transactionToUpdate.Message = transaction.Message;
-                    context.Update(transactionToUpdate);
-                    await context.SaveChangesAsync();
-                }                
+                    await transactionApp.Update(transactionToUpdate.Id, transactionToUpdate);
+                }
             }
         }
     }
