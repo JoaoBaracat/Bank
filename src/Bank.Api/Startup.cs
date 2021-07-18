@@ -1,7 +1,6 @@
 using Bank.Api.Configurations;
-using Bank.Domain.Models.MQ;
+using Bank.Infra.Consumers.Models.ServiceSettings;
 using Bank.Infra.Data.Contexts;
-using Bank.Infra.Identity;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;

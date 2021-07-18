@@ -1,7 +1,6 @@
-﻿using Bank.Domain.Apps.MessageQueues;
-using Bank.Domain.Apps.Services;
-using Bank.Domain.Models.APIConta;
-using Bank.Domain.Models.MQ;
+﻿using Bank.Domain.Apps.Services;
+using Bank.Infra.Consumers.Models.APIConta;
+using Bank.Infra.Consumers.Models.ServiceSettings;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using RestSharp;

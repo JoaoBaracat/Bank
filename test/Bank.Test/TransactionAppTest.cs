@@ -1,6 +1,5 @@
 ﻿using Bank.App;
 using Bank.Domain.Entities;
-using Bank.Domain.Models.MQ;
 using Bank.Domain.Notifications;
 using Bank.Infra.Consumers.MessageQueues;
 using Bank.Infra.Data.Contexts;

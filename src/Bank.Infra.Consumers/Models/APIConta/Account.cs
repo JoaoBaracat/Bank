@@ -1,4 +1,4 @@
-﻿namespace Bank.Domain.Models.APIConta
+﻿namespace Bank.Infra.Consumers.Models.APIConta
 {
     public class Account
     {

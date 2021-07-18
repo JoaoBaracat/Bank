@@ -1,5 +1,5 @@
 ﻿using Bank.Domain.Apps.MessageQueues;
-using Bank.Domain.Models.MQ;
+using Bank.Infra.Consumers.Models.ServiceSettings;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using System.Text;

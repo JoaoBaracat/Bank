@@ -1,4 +1,4 @@
-﻿using Bank.Domain.Models.MQ;
+﻿using Bank.Infra.Consumers.Models.ServiceSettings;
 using RabbitMQ.Client;
 using System.Collections.Generic;
 

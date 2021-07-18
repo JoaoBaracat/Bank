@@ -1,4 +1,4 @@
-﻿namespace Bank.Domain.Models.MQ
+﻿namespace Bank.Infra.Consumers.Models.ServiceSettings
 {
     public class APIContaSettings
     {

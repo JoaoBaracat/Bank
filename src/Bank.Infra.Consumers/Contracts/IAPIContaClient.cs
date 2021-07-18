@@ -1,7 +1,4 @@
-﻿using Bank.Domain.Models.APIConta;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Bank.Infra.Consumers.Models.APIConta;
 using System.Threading.Tasks;
 
 namespace Bank.Domain.Apps.Services
