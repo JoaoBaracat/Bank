@@ -5,6 +5,6 @@ namespace Bank.Infra.Consumers.Contracts
 {
     public interface IConsumerTransactionApp
     {
-        Task UpdateTransactionAsync(Transaction transaction);
+        Task UpdateTransactionAsync(Transaction transaction, int transactionStatus, string transactionMessage);
     }
 }

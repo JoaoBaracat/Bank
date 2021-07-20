@@ -16,7 +16,7 @@ namespace Bank.Infra.Consumers.App
             _serviceProvider = serviceProvider;
         }
 
-        public async Task UpdateTransactionAsync(Transaction transaction)
+        public async Task UpdateTransactionAsync(Transaction transaction, int transactionStatus, string transactionMessage)
         {
             using (var scope = _serviceProvider.CreateScope())
             {
@@ -24,8 +24,8 @@ namespace Bank.Infra.Consumers.App
                 var transactionToUpdate = await transactionApp.GetById(transaction.Id);
                 if (transactionToUpdate != null)
                 {
-                    transactionToUpdate.Status = transaction.Status;
-                    transactionToUpdate.Message = transaction.Message;
+                    transactionToUpdate.Status = transactionStatus;
+                    transactionToUpdate.Message = transactionMessage;
                     await transactionApp.Update(transactionToUpdate.Id, transactionToUpdate);
                 }
             }

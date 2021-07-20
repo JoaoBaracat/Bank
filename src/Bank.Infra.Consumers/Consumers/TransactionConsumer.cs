@@ -14,6 +14,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using static Bank.Domain.Enums.TransactionStatusEnum;
+using static Bank.Infra.Consumers.Models.Enums.ProcessorResultEnum;
 
 namespace Bank.Infra.Consumers.Consumers
 {
@@ -53,16 +54,48 @@ namespace Bank.Infra.Consumers.Consumers
                 {
                     var contentString = Encoding.UTF8.GetString(eventArgs.Body.ToArray());
                     transactionMessage = JsonConvert.DeserializeObject<Transaction>(contentString);
-                    transactionMessage.Status = (int)TransactionStatus.Processing;
-
-                    await _consumerTransactionApp.UpdateTransactionAsync(transactionMessage);
+                    await _consumerTransactionApp.UpdateTransactionAsync(transactionMessage, (int)TransactionStatus.Processing, transactionMessage.Message);
                     _logger.LogInformation($"Processing message: {contentString}");
-                    await _messageProcessor.ProcessMessage(new MessageProcessorDTO() { 
-                        EventArgs = eventArgs, 
-                        TransactionMessage = transactionMessage, 
-                        ContentString = contentString ,
+
+                    var retryQueueDTO = new RetryQueueDTO()
+                    {
+                        EventArgs = eventArgs,
+                        TransactionMessage = transactionMessage,
+                        ContentString = contentString,
                         Model = _model
-                    });                    
+                    };
+
+                    var validateAccountsResult = await _messageProcessor.ValidateAccounts(transactionMessage);
+                    if (validateAccountsResult == AccountsResultEnum.NotReachable)
+                    {
+                        await RetryQueue(retryQueueDTO);
+                    }
+                    else if(validateAccountsResult == AccountsResultEnum.NotAllowed)
+                    {
+                        await _consumerTransactionApp.UpdateTransactionAsync(transactionMessage, (int)TransactionStatus.Error, "Account not found.");
+                        _model.BasicAck(eventArgs.DeliveryTag, false);
+                        _logger.LogInformation($"Account not found.: {contentString}");
+                    }
+                    else
+                    {
+                        var transferResult = await _messageProcessor.TransferFunds(transactionMessage);
+                        if (transferResult == AccountsResultEnum.AccountsOk)
+                        {
+                            await _consumerTransactionApp.UpdateTransactionAsync(transactionMessage, (int)TransactionStatus.Confirmed, transactionMessage.Message);
+                            _model.BasicAck(eventArgs.DeliveryTag, false);
+                            _logger.LogInformation($"Message processed: {contentString}");
+                        }
+                        else if (transferResult == AccountsResultEnum.NotAllowed)
+                        {
+                            await _consumerTransactionApp.UpdateTransactionAsync(transactionMessage, (int)TransactionStatus.Error, "Not enough balance");
+                            _model.BasicAck(eventArgs.DeliveryTag, false);
+                            _logger.LogInformation($"Not enough balance: {contentString}");
+                        }
+                        else
+                        {
+                            await RetryQueue(retryQueueDTO);
+                        }
+                    }
                 }
                 catch (Exception e)
                 {
@@ -71,6 +104,27 @@ namespace Bank.Infra.Consumers.Consumers
                 }
             };
             return consumer;
+        }
+
+        private async Task RetryQueue(RetryQueueDTO messageProcessor)
+        {
+            var retryHandler = new RetryHandler();
+            var attempts = retryHandler.GetRetryAttempts(messageProcessor.EventArgs.BasicProperties);
+            if (attempts < _configuration.RetryAttempts)
+            {
+                attempts++;
+                var properties = messageProcessor.Model.CreateBasicProperties();
+                properties.Headers = retryHandler.CopyMessageHeaders(messageProcessor.EventArgs.BasicProperties.Headers);
+                retryHandler.SetRetryAttempts(properties, attempts);
+                messageProcessor.Model.BasicPublish(messageProcessor.EventArgs.Exchange, messageProcessor.EventArgs.RoutingKey, properties, messageProcessor.EventArgs.Body);
+                messageProcessor.Model.BasicAck(messageProcessor.EventArgs.DeliveryTag, false);
+            }
+            else
+            {
+                await _consumerTransactionApp.UpdateTransactionAsync(messageProcessor.TransactionMessage, (int)TransactionStatus.Error, "APIConta not reachable.");
+                messageProcessor.Model.BasicAck(messageProcessor.EventArgs.DeliveryTag, false);
+                _logger.LogInformation($"APIConta not reachable.: {messageProcessor.ContentString}");
+            }
         }
     }
 }

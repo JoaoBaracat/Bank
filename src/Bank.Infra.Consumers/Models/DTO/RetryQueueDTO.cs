@@ -4,7 +4,7 @@ using RabbitMQ.Client.Events;
 
 namespace Bank.Infra.Consumers.Models.DTO
 {
-    public class MessageProcessorDTO
+    public class RetryQueueDTO
     {
         public BasicDeliverEventArgs EventArgs { get; set; }
         public Transaction TransactionMessage { get; set; }

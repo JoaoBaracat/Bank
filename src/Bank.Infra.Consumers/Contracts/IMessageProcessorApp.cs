@@ -1,13 +1,12 @@
-﻿using Bank.Infra.Consumers.Models.DTO;
+﻿using Bank.Domain.Entities;
 using System.Threading.Tasks;
+using static Bank.Infra.Consumers.Models.Enums.ProcessorResultEnum;
 
 namespace Bank.Infra.Consumers.Contracts
 {
     public interface IMessageProcessorApp
     {
-        Task ProcessMessage(MessageProcessorDTO messageProcessor);
-        Task TransferFunds(MessageProcessorDTO messageProcessor);
-        Task<bool> ValidateAccounts(MessageProcessorDTO messageProcessor);
-        Task RetryQueue(MessageProcessorDTO messageProcessor);
+        Task<AccountsResultEnum> TransferFunds(Transaction transaction);
+        Task<AccountsResultEnum> ValidateAccounts(Transaction transaction);
     }
 }
